@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>three.jsの基礎</title>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+            "imports":{
+                "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+            }
+        }
+    </script>
+    <!-- 2つ目のやつにぜーんぶの機能が入っていて、その中でつかうものを1つ目のやつで選んでるんだよーん、みたいな -->
+    <script type="module">
+        import * as THREE from 'three';
+        console.log(THREE);
+    </script>
+</body>
+
+</html>
