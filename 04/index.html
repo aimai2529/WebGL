@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バーティクル</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/",
+            "stats": "https://cdn.skypack.dev/stats.js.fps",
+            "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm"
+        }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import Stats from 'stats';
+        import GUI from 'lil-gui';
+
+        //テクスチャの読み込み
+        const texture = new THREE.TextureLoader().load("./textures/5.png");
+
+        //シーンの生成
+        const scene = new THREE.Scene();
+
+        //カメラ
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+        camera.position.z = 5;
+        scene.add(camera);
+
+        //軸ヘルパー
+        const axesHelper = new THREE.AxesHelper(2);
+        scene.add(axesHelper);
+
+        //Stats
+        const stats = new Stats();
+        stats.showPanel(0);
+        document.body.appendChild(stats.dom);
+
+        //GUI
+        const gui = new GUI();
+
+        //レンダラー
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        renderer.render(scene, camera);
+
+        //マウスコントロール
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        //オブジェクトの追加
+        const sphere = new THREE.Points(
+            new THREE.SphereGeometry(1, 12, 24),
+            new THREE.PointsMaterial({
+                size: 0.1,
+                color: 0x00ffff,
+                alphaMap: texture,
+                transparent: true,
+                depthWrite: false,
+                //描写された順番でレイヤー順を決めるか、みたいな
+                blending: THREE.AdditiveBlending,
+            })
+        );
+        scene.add(sphere);
+
+        //パーティクル
+        const bufferGeometry = new THREE.BufferGeometry();
+        const count = 1500;
+        const vertices = new Float32Array(count * 3);
+        //一つの頂点に対して、x座標、y座標、z座標の3つの値が必要だよ
+        const colors = new Float32Array(count * 3);
+
+        for (let i = 0; i < count * 3; i++) {
+            vertices[i] = Math.random() * 10 - 5;
+            colors[i] = Math.random();
+        }
+        console.log(vertices);
+
+        bufferGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        bufferGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        //メッシュ化
+        const pointsMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            sizeAttenuation: true,
+            //遠くの点ほど小さくなるみたいな
+            // color: 0xff00ff,
+            vertexColors: true,
+            //透過
+            alphaMap: texture,
+            transparent: true,
+            depthWrite: false,
+            //描写された順番でレイヤー順を決めるか、みたいな
+            blending: THREE.AdditiveBlending,
+        });
+        const patricles = new THREE.Points(
+            bufferGeometry,
+            pointsMaterial
+        )
+        scene.add(patricles);
+
+        gui.add(pointsMaterial, 'size', 0.01, 0.5).name('パーティクルサイズ').step(0.01);
+        gui.addColor(pointsMaterial, 'color').name('パーティクルカラー');
+
+        //更新
+        const update = () => {
+            stats.begin();
+            renderer.render(scene, camera);
+            controls.update();
+            stats.end();
+            window.requestAnimationFrame(update);
+        };
+
+        update();
+
+        //ウィンドウリサイズ
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デジタル時計</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/",
+            "stats": "https://cdn.skypack.dev/stats.js.fps",
+            "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+        import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+        import Stats from 'stats';
+        import GUI from 'lil-gui';
+
+        //シーン追加
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffe5cc);
+
+        //軸ヘルパー
+        // const axesHelper = new THREE.AxesHelper(2);
+        // scene.add(axesHelper);
+
+        //GridHelper;
+        // const gridHelper = new THREE.GridHelper(200, 100);//200の範囲を100四方の正方形で分ける
+        // scene.add(gridHelper);
+
+        //Stats
+        const stats = new Stats();
+        stats.showPanel(0);
+        document.body.appendChild(stats.dom);
+
+        //GUI
+        const gui = new GUI();
+
+        //カメラ追加
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+        camera.position.z = 5;
+        scene.add(camera);
+
+        //グループ
+        const group = new THREE.Group();
+        scene.add(group);
+
+        //CameraHelper
+        // const cameraHelper = new THREE.CameraHelper(camera);
+        // scene.add(cameraHelper);
+
+
+        //環境光の追加（色、強度）
+        //シーン内のすべてのオブジェクトを均等に照らす。
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+        scene.add(ambientLight);
+
+        //平行光の追加（色、強度）
+        //特定の方向に放出される光。一般的な使用例は、日光をシミュレートすること。
+        const directionalLight = new THREE.DirectionalLight(0xff7b0f, 1.5);
+        directionalLight.position.set(0, 0, 2);
+        scene.add(directionalLight);
+
+        //平行光のヘルパー
+        // const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight);
+        // scene.add(directionalLightHelper);
+
+        //半球光の追加（空の色、地面の色、強度）
+        const hemisphereLight = new THREE.HemisphereLight(0xffa200, 0x004cff, 3);
+        group.add(hemisphereLight);
+
+        //半球光のヘルパー
+        // const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight);
+        // scene.add(hemisphereLightHelper);
+
+        //GUIに追加
+        const guiAmbient = gui.addFolder('周囲光');
+        guiAmbient.addColor(ambientLight, 'color').name('色');
+        guiAmbient.add(ambientLight, 'intensity', 0, 5).name('強度');
+
+        const guiDirectional = gui.addFolder('平行光');
+        guiDirectional.addColor(directionalLight, 'color').name('色');
+        guiDirectional.add(directionalLight, 'intensity', 0, 5).name('強度');
+
+        const guiHemisphere = gui.addFolder('半球光');
+        guiHemisphere.addColor(hemisphereLight, 'color').name('空の色');
+        guiHemisphere.addColor(hemisphereLight, 'groundColor').name('地面の色');
+        guiHemisphere.add(hemisphereLight, 'intensity', 0, 5).name('強度');
+
+        //レンダラー
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        renderer.render(scene, camera);
+
+        //マウスコントロール
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        //桁数を揃える関数
+        const leftFillNum = (num) => {
+            return num.toString().padStart(2, '0');
+        };
+
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        let text = null;
+        let textGeometry = null;
+
+        const getTime = (font) => {
+            scene.remove(text);
+
+            //dispose() で破棄する
+            if (textGeometry) textGeometry.dispose();
+
+            //現在時刻の所得
+            const now = new Date();
+            const hour = leftFillNum(now.getHours());
+            const minute = leftFillNum(now.getMinutes());
+            const second = leftFillNum(now.getSeconds());
+            const milliSecond = now.getMilliseconds();
+            const currentTime = `${hour}:${minute}:${second}`;
+            console.log("getTime");
+
+            //テキストジオメトリの追加
+            textGeometry = new TextGeometry(currentTime, {
+                font: font,
+                size: 0.7,
+                depth: 0.1,
+                bevelEnabled: true,
+                bevelThickness: 0.03,
+                bevelSize: 0.03,
+                bevelOffset: 0,
+                bevelSegments: 5,
+            });
+            textGeometry.center();
+            text = new THREE.Mesh(textGeometry, material);
+            scene.add(text);
+
+            setTimeout(getTime, 1000 - milliSecond, font);
+        }
+
+        //フォントの読み込み
+        const fontLoader = new FontLoader();
+        fontLoader.load('./fonts/myfont.json', (font) => {
+            console.log(font);
+            getTime(font);
+            const guiText = gui.addFolder('テキスト');
+            guiText.addColor(material, 'color').name('文字の色');
+        })
+
+        //オブジェクト追加
+        for (let i = 0; i < 25; i++) {
+            const box = new THREE.Mesh(
+                new THREE.BoxGeometry(),
+                new THREE.MeshStandardMaterial({ color: 0xffffff })
+            )
+
+            box.position.x = Math.random() * 10 - 5;
+            box.position.y = Math.random() * 10 - 5;
+            box.position.z = Math.random() * 10 - 5;
+            box.rotation.x = Math.random() * Math.PI;
+            box.rotation.y = Math.random() * Math.PI;
+            const scale = Math.random() * 0.5 + 0.2;
+            box.scale.set(scale, scale, scale);
+            group.add(box);
+
+            const ball = new THREE.Mesh(
+                new THREE.SphereGeometry(),
+                new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            ball.position.x = Math.random() * 10 - 5;
+            ball.position.y = Math.random() * 10 - 5;
+            ball.position.z = Math.random() * 10 - 5;
+            ball.scale.set(scale, scale, scale);
+            group.add(ball);
+        }
+
+
+        //更新
+        const update = () => {
+            stats.begin();
+            group.rotation.x += 0.001;
+            group.rotation.y += 0.001;
+            group.rotation.z += 0.0001;
+            renderer.render(scene, camera);
+            controls.update();
+            stats.end();
+            window.requestAnimationFrame(update);
+        };
+        update();
+
+        //ウィンドウリサイズ
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+
+</body>
+
+</html>
