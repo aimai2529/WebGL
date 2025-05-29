@@ -1,0 +1,21 @@
+{
+  "name": "lp",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lil-gui": "^0.20.0",
+    "stats-js": "^1.0.1",
+    "the-new-css-reset": "^1.11.3",
+    "three": "^0.176.0"
+  }
+}
